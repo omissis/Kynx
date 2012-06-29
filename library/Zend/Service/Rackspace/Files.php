@@ -305,7 +305,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
             require_once 'Zend/Service/Rackspace/Exception.php';
             throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
         }
-        $result= $this->httpCall($this->getStorageUrl().'/'.rawurlencode($container).'/'.rawurlencode($object),'GET',$headers);
+        $result= $this->httpCall($this->getObjectUrl($container, $object),'GET',$headers);
         $status= $result->getStatus();
         switch ($status) {
             case '200': // break intentionally omitted
@@ -329,6 +329,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
         $this->errorCode= $status;
         return false;
     }
+    
     /**
      * Store a file in a container 
      *
@@ -358,7 +359,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
         }
         $headers[self::HEADER_HASH]= md5($content);
         $headers[self::HEADER_CONTENT_LENGTH]= strlen($content);
-        $result= $this->httpCall($this->getStorageUrl().'/'.rawurlencode($container).'/'.rawurlencode($object),'PUT',$headers,null,$content);
+        $result= $this->httpCall($this->getObjectUrl($container, $object),'PUT',$headers,null,$content);
         $status= $result->getStatus();
         switch ($status) {
             case '201': // break intentionally omitted
@@ -392,7 +393,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
             require_once 'Zend/Service/Rackspace/Exception.php';
             throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
         }
-        $result= $this->httpCall($this->getStorageUrl().'/'.rawurlencode($container).'/'.rawurlencode($object),'DELETE');
+        $result= $this->httpCall($this->getObjectUrl($container, $object),'DELETE');
         $status= $result->getStatus();
         switch ($status) {
             case '204': // break intentionally omitted
@@ -435,8 +436,9 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
             require_once 'Zend/Service/Rackspace/Exception.php';
             throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_DEST_OBJECT);
         }
+        $sourceUrl = $this->getObjectUrl($container_source, $obj_source);
         $headers= array(
-            self::HEADER_COPY_FROM => '/'.rawurlencode($container_source).'/'.rawurlencode($obj_source),
+            self::HEADER_COPY_FROM => parse_url($sourceUrl, PHP_URL_PATH),
             self::HEADER_CONTENT_LENGTH => 0
         );
         if (!empty($content_type)) {
@@ -447,7 +449,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
                 $headers[self::METADATA_OBJECT_HEADER.$key]= $value;
             }
         }
-        $result= $this->httpCall($this->getStorageUrl().'/'.rawurlencode($container_dest).'/'.rawurlencode($obj_dest),'PUT',$headers);
+        $result= $this->httpCall($this->getObjectUrl($container_dest,$obj_dest),'PUT',$headers);
         $status= $result->getStatus();
         switch ($status) {
             case '201': // break intentionally omitted
@@ -475,7 +477,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
             require_once 'Zend/Service/Rackspace/Exception.php';
             throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
         }
-        $result= $this->httpCall($this->getStorageUrl().'/'.rawurlencode($container).'/'.rawurlencode($object),'HEAD');
+        $result= $this->httpCall($this->getObjectUrl($container, $object),'HEAD');
         $status= $result->getStatus();
         switch ($status) {
             case '200': // break intentionally omitted
@@ -534,7 +536,7 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
         foreach ($metadata as $key => $value) {
             $headers[self::METADATA_OBJECT_HEADER.$key]= $value;
         }
-        $result= $this->httpCall($this->getStorageUrl().'/'.rawurlencode($container).'/'.rawurlencode($object),'POST',$headers);
+        $result= $this->httpCall($this->getObjectUrl($container, $object),'POST',$headers);
         $status= $result->getStatus();
         switch ($status) {
             case '202': // break intentionally omitted
@@ -678,5 +680,19 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
         }
         $this->errorCode= $status;
         return false;
+    }
+
+    protected function getObjectUrl($container, $object) {
+        $path = explode('/', $object);
+        if (count($path) && empty($path[0])) unset($path[0]);
+        return $this->getStorageUrl() . '/' . rawurlencode($container) . '/' . rawurlencode(join('/', $path));
+        /*
+        array_unshift($path, $container);
+        array_walk($path, function(&$value) {
+            $value = rawurlencode($value);
+        });
+        return $this->getStorageUrl() . '/' . join('/', $path);
+         * 
+         */
     }
 }
