@@ -18,6 +18,13 @@
  * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
+
+
+/**
+ * @see Zend_Service_Rackspace_Files_Checksum_Interface
+ */
+require_once 'Zend/Service/Rackspace/Files/Checksum/Interface.php';
+
 /**
  * Performs checksumming by writing data to temp file
  *
@@ -74,10 +81,16 @@ class Zend_Service_Rackspace_Files_Checksum_Tempfile implements Zend_Service_Rac
      */
     public function calculate() 
     {
+        $sum = false;
         if ($this->tempFile) {
             $meta = stream_get_meta_data($this->tempFile);
-            $this->sum .= md5_file($meta['uri']);
+            $sum = md5_file($meta['uri']);
+            if ($sum) {
+                $this->sum .= md5_file($meta['uri']);
+            }
+            $this->close();
         }
+        return $sum;
     }
     
     /**
