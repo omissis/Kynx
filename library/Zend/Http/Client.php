@@ -1020,30 +1020,7 @@ class Zend_Http_Client
 
         // Send the first request. If redirected, continue.
         do {
-            // Clone the URI and add the additional GET parameters to it
-            $uri = clone $this->uri;
-            if (! empty($this->paramsGet)) {
-                $query = $uri->getQuery();
-                   if (! empty($query)) {
-                       $query .= '&';
-                   }
-                $query .= http_build_query($this->paramsGet, null, '&');
-                if ($this->config['rfc3986_strict']) {
-                    $query = str_replace('+', '%20', $query);
-                }
-
-                // @see ZF-11671 to unmask for some services to foo=val1&foo=val2
-                if ($this->getUnmaskStatus()) {
-                    if ($this->_queryBracketsEscaped) {
-                        $query = preg_replace('/%5B(?:[0-9]|[1-9][0-9]+)%5D=/', '=', $query);
-                    } else {
-                        $query = preg_replace('/\\[(?:[0-9]|[1-9][0-9]+)\\]=/', '=', $query);
-                    }
-                }
-
-                $uri->setQuery($query);
-            }
-
+            $uri = $this->_prepareUri();
             $body = $this->_prepareBody();
             $headers = $this->_prepareHeaders();
 
@@ -1159,6 +1136,38 @@ class Zend_Http_Client
         } while ($this->redirectCounter < $this->config['maxredirects']);
 
         return $response;
+    }
+    
+    /**
+     * Clone the URI and add the additional GET parameters to it
+     * 
+     * @return Zend_Uri_Http
+     */
+    protected function _prepareUri()
+    {
+        $uri = clone $this->uri;
+        if (! empty($this->paramsGet)) {
+            $query = $uri->getQuery();
+                if (! empty($query)) {
+                    $query .= '&';
+                }
+            $query .= http_build_query($this->paramsGet, null, '&');
+            if ($this->config['rfc3986_strict']) {
+                $query = str_replace('+', '%20', $query);
+            }
+
+            // @see ZF-11671 to unmask for some services to foo=val1&foo=val2
+            if ($this->getUnmaskStatus()) {
+                if ($this->_queryBracketsEscaped) {
+                    $query = preg_replace('/%5B(?:[0-9]|[1-9][0-9]+)%5D=/', '=', $query);
+                } else {
+                    $query = preg_replace('/\\[(?:[0-9]|[1-9][0-9]+)\\]=/', '=', $query);
+                }
+            }
+
+            $uri->setQuery($query);
+        }
+        return $uri;
     }
 
     /**
