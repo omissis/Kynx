@@ -50,11 +50,15 @@ interface Zend_Service_Rackspace_Files_Checksum_Interface
     
     /**
      * Returns concatenated checksums
+     * 
+     * @return string
      */
     function getSum();
     
     /**
      * Calculates checksum
+     * 
+     * @return string   Checksum, false on failure
      */
     function calculate();
     
