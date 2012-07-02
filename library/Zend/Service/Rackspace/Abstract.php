@@ -316,6 +316,10 @@ abstract class Zend_Service_Rackspace_Abstract
         $client->setUri($url);
         $this->errorMsg='';
         $this->errorCode='';
+        
+        if (!empty($headers['Transfer-Encoding']) && $headers['Transfer-Encoding'] == 'chunked') {
+            return $client->startChunkedSend();
+        }
         return $client->request();
     }
     /**

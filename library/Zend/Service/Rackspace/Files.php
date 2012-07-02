@@ -48,6 +48,8 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
     const HEADER_LAST_MODIFIED                 = 'Last-Modified';
     const HEADER_CONTENT_LENGTH                = 'Content-Length';
     const HEADER_COPY_FROM                     = 'X-Copy-From';
+    const HEADER_RANGE                         = 'Range';
+    const HEADER_TRANSER_ENCODING              = 'Transfer-Encoding';
     const METADATA_OBJECT_HEADER               = "X-Object-Meta-";
     const METADATA_CONTAINER_HEADER            = "X-Container-Meta-";
     const CDN_URI                              = "X-CDN-URI";
@@ -67,6 +69,35 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
     const CONTAINER_BYTES_USE                  = "X-Container-Bytes-Used";
     const MANIFEST_OBJECT_HEADER               = "X-Object-Manifest";
 
+    const WRAPPER_NAME                         = 'rscf';
+    
+    /**
+     * Array of wrapper clients
+     * 
+     * @var Zend_Service_Rackspace_Files_Stream[]
+     */
+    protected static $wrapperClients = array();
+    
+    /**
+     * Options for wrapper clients
+     * @var array
+     */
+    protected $wrapperOptions = array();
+    
+    /**
+     * Object being sent using chunked encoding
+     * 
+     * @var array
+     */
+    protected $chunkedObject;
+    
+    /**
+     * Class to perform checksums
+     * 
+     * @var Zend_Service_Rackspace_Files_Checksum_Interface
+     */
+    protected $checkSummer;
+    
     /**
      * Return the total count of containers
      *
@@ -331,6 +362,106 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
     }
     
     /**
+     * Get an object using streaming
+     *
+     * Can use either provided filename for storage or create a temp file if none provided.
+     * 
+     * @param string $container
+     * @param string $object
+     * @param mixed $streamfile  resource|string
+     */
+    public function getObjectIntoStream($container, $object, $streamfile = null)
+    {
+        $this->getHttpClient()->setStream($streamfile?$streamfile:true);
+        $rv = $this->getObject($container, $object);
+        $this->getHttpClient()->setStream(null);
+
+        return $rv;
+    }
+
+    /**
+     * Gets range of bytes of an object
+     *
+     * @param string $container
+     * @param string $object
+     * @param integer $start
+     * @param integer $end
+     * @param array $headers
+     * @return Zend_Service_Rackspace_Files_Object|boolean
+     */
+    public function getObjectRange($container,$object,$start='',$end='',$headers=array())
+    {
+        if (empty($container)) {
+            /**
+             * @see Zend_Service_Rackspace_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Exception.php';
+            throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_CONTAINER);
+        }
+        if (empty($object)) {
+            /**
+             * @see Zend_Service_Rackspace_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Exception.php';
+            throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
+        }
+        if ($start || $end) {
+            $headers[self::HEADER_RANGE] = "bytes=$start-$end";
+        }
+        return $this->httpCall($this->getObjectUrl($container, $object),'GET',$headers);
+    }
+    
+    /**
+     * Get an object using streaming
+     *
+     * Can use either provided filename for storage or create a temp file if none provided.
+     * 
+     * @param string $container
+     * @param string $object
+     * @param mixed $streamfile  resource|string
+     */
+    public function getObjectIntoStream($container, $object, $streamfile = null)
+    {
+        $this->getHttpClient()->setStream($streamfile?$streamfile:true);
+        $rv = $this->getObject($container, $object);
+        $this->getHttpClient()->setStream(null);
+
+        return $rv;
+    }
+
+    /**
+     * Gets range of bytes of an object
+     *
+     * @param string $container
+     * @param string $object
+     * @param integer $start
+     * @param integer $end
+     * @param array $headers
+     * @return Zend_Service_Rackspace_Files_Object|boolean
+     */
+    public function getObjectRange($container,$object,$start='',$end='',$headers=array())
+    {
+        if (empty($container)) {
+            /**
+             * @see Zend_Service_Rackspace_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Exception.php';
+            throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_CONTAINER);
+        }
+        if (empty($object)) {
+            /**
+             * @see Zend_Service_Rackspace_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Exception.php';
+            throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
+        }
+        if ($start || $end) {
+            $headers[self::HEADER_RANGE] = "bytes=$start-$end";
+        }
+        return $this->httpCall($this->getObjectUrl($container, $object),'GET',$headers);
+    }
+    
+    /**
      * Store a file in a container 
      *
      * @param string $container
@@ -377,6 +508,111 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
         $this->errorCode= $status;
         return false;
     }
+    
+    /**
+     * Store a file in a container using chunked transfer encoding
+     *
+     * @param string $container
+     * @param string $object
+     * @param string $content
+     * @param array $metadata
+     * @return boolean
+     */
+    public function beginStoreChunks($container,$object,$content,$metadata=array()) {
+        if (empty($container)) {
+            /**
+             * @see Zend_Service_Rackspace_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Exception.php';
+            throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_CONTAINER);
+        }
+        if (empty($object)) {
+            /**
+             * @see Zend_Service_Rackspace_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Exception.php';
+            throw new Zend_Service_Rackspace_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
+        }
+        
+        $headers = array(
+            self::HEADER_CONTENT_TYPE => $this->getMimeTypeFromString($content),
+            self::HEADER_TRANSER_ENCODING => 'chunked');
+        
+        if (!empty($metadata) && is_array($metadata)) {
+            foreach ($metadata as $key => $value) {
+                $headers[self::METADATA_OBJECT_HEADER.$key]= $value;
+            }
+        }
+        $this->chunkedObject = array('container' => $container, 'object' => $object);
+        $this->getChecksummer()->open();
+        $this->httpCall($this->getObjectUrl($container, $object), 'PUT', $headers, null, $content);
+  
+        return $this->getChecksummer()->append($content);
+    }
+    
+    /**
+     * Appends chunk to transfer
+     * 
+     * @todo Handle splitting files > 5G
+     * 
+     * @param string $data
+     * @return integer     false on failure
+     * @throws Zend_Service_Rackspace_Files_Exception 
+     */
+    public function appendStoreChunk($data)
+    {
+        $len = false;
+        if ($this->getHttpClient()->appendChunk($data)) {
+            $len = $this->getChecksummer()->append($data);
+        }
+        return $len;
+    }
+    
+    /**
+     * Signal that chunked transfer is ended
+     * @return boolean
+     */
+    public function endStoreChunks() 
+    {
+        $result = $this->httpClient->endChunkedSend();
+        $status = $result->getStatus();
+        $rv = false;
+        switch ($status) {
+            case '201': 
+                // only successful if MD5s match
+                $rv = $result->getHeader(self::HEADER_HASH) == $this->getChecksummer()->getSum();
+                if (!$rv) {
+                    $this->deleteObject($this->chunkedObject['container'], $this->chunkedObject['object']);
+                    $this->errorMsg = self::ERROR_OBJECT_CHECKSUM;
+                }
+                break;
+            case '412':
+                $this->errorMsg= self::ERROR_OBJECT_MISSING_PARAM;
+                break;
+            case '422':
+                $this->errorMsg= self::ERROR_OBJECT_CHECKSUM;
+                break;
+            default:
+                $this->errorMsg= $result->getBody();
+                break;
+        }
+        if (!$rv) {
+            $this->errorCode= $status;
+        }
+        $this->getChecksummer()->close();
+        $this->chunkedObject = false;
+        return $rv;
+    }
+    
+    /**
+     * Returns true if transfer in progress
+     * @return boolean
+     */
+    public function isTransfering() 
+    {
+        return $this->getHttpClient()->isSendingChunked();
+    }
+    
     /**
      * Delete an object in a container
      *
@@ -681,18 +917,173 @@ class Zend_Service_Rackspace_Files extends Zend_Service_Rackspace_Abstract
         $this->errorCode= $status;
         return false;
     }
+    
+    /**
+     * Override base class to add keepalive option
+     * @return Zend_Http_Client_Chunked
+     */
+    public function getHttpClient()
+    {
+        if (empty($this->httpClient)) {
+            /**
+             * @see Zend_Http_Client_Chunked 
+             */
+            require_once 'Zend/Http/Client/Chunked.php';
+            $this->httpClient = new Zend_Http_Client_Chunked(null, array(/*'keepalive' => true*/));
+        }
+        return $this->httpClient;
+    }
+    
+    /**
+     * Register this object as stream wrapper client
+     *
+     * @param  string $name
+     * @return Cltm_Service_Rackspace_Files
+     */
+    public function registerAsClient($name)
+    {
+        self::$wrapperClients[$name] = $this;
+        return $this;
+    }
 
+    /**
+     * Unregister this object as stream wrapper client
+     *
+     * @param  string $name
+     * @return Zend_Service_Rackspace_Files
+     */
+    public function unregisterAsClient($name)
+    {
+        unset(self::$wrapperClients[$name]);
+        return $this;
+    }
+
+    /**
+     * Get wrapper client for stream type
+     *
+     * @param  string $name
+     * @return Cltm_Service_Rackspace_Files
+     */
+    public static function getWrapperClient($name)
+    {
+        return self::$wrapperClients[$name];
+    }
+    
+    /**
+     * Returns options for stream wrapper
+     * 
+     * @return array
+     */
+    public function getWrapperOptions()
+    {
+        return $this->wrapperOptions;
+    }
+
+    /**
+     * Register this object as stream wrapper
+     *
+     * @param  string $name
+     * @param integer $rangeSize Size of range to fetch when reading
+     */
+    public function registerStreamWrapper($name=self::WRAPPER_NAME, $options = array())
+    {
+        /**
+         * @see Zend_Service_Rackspace_Files_Stream
+         */
+        require_once 'Zend/Service/Rackspace/Files/Stream.php';
+        stream_register_wrapper($name, 'Zend_Service_Rackspace_Files_Stream');
+        $this->registerAsClient($name);
+        $this->wrapperOptions = $options;
+    }
+
+    /**
+     * Unregister this object as stream wrapper
+     *
+     * @param  string $name
+     */
+    public function unregisterStreamWrapper($name=self::WRAPPER_NAME)
+    {
+        stream_wrapper_unregister($name);
+        $this->unregisterAsClient($name);
+    }
+    
+    /**
+     * Gets checksumming class
+     *
+     * @return Zend_Service_Rackspace_Files_Checkum
+     */
+    public function getChecksummer()
+    {
+        if (!($this->checkSummer instanceof Zend_Service_Rackspace_Files_Checksum_Interface)) {
+            /**
+             * @see Zend_Service_Rackspace_Files_Checksum_Tempfile
+             */
+            require_once 'Zend/Service/Rackspace/Files/Checksum/Tempfile.php';
+            $this->checkSummer = new Zend_Service_Rackspace_Files_Checksum_Tempfile();
+        }
+        return $this->checkSummer;
+    }
+    
+    /**
+     * Sets checksumming class
+     * 
+     * $param Zend_Service_Rackspace_Files_Checkum
+     */
+    public function setChecksummer(Zend_Service_Rackspace_Files_Checksum_Interface $checksummer)
+    {
+        $this->checkSummer = $checksummer;
+    }
+ 
+    /**
+     * Returns URL for object in given container
+     * 
+     * @param type $container
+     * @param type $object
+     * @return type
+     */
     protected function getObjectUrl($container, $object) {
+        if (strlen($container) > 256 || strstr($container, '/')) {
+            /**
+             * @see Zend_Service_Rackspace_Files_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Files/Exception.php';
+            throw new Zend_Service_Rackspace_Files_Exception("Invalid container name");
+        }
         $path = explode('/', $object);
         if (count($path) && empty($path[0])) unset($path[0]);
-        return $this->getStorageUrl() . '/' . rawurlencode($container) . '/' . rawurlencode(join('/', $path));
-        /*
-        array_unshift($path, $container);
-        array_walk($path, function(&$value) {
-            $value = rawurlencode($value);
-        });
-        return $this->getStorageUrl() . '/' . join('/', $path);
-         * 
-         */
+        $object = join('/', $path);
+        if (strlen($object) > 1024) {
+            /**
+             * @see Zend_Service_Rackspace_Files_Exception
+             */
+            require_once 'Zend/Service/Rackspace/Files/Exception.php';
+            throw new Zend_Service_Rackspace_Files_Exception("Object name must not excede 1024 characters");
+        }
+        return $this->getStorageUrl() . '/' . rawurlencode($container) . '/' . rawurlencode($object);
+    }
+    
+    /**
+     * Attempts to determine mime type of given content
+     * @param string $content
+     * @return string
+     */
+    protected function getMimeTypeFromString($content)
+    {
+        static $finfo = false;
+        $mimeType = '';
+        if (class_exists('finfo')) {
+            if (!$finfo) {
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+            }
+            $mimeType = $finfo->buffer($content);
+        }
+        elseif (function_exists('mime_content_type')) {
+            $tmpname = tempnam(sys_get_temp_dir(), 'mime');
+            if (file_put_contents($tmpname, $content)) {
+                $mimeType = mime_content_type($tmpname);
+            }
+            @unlink($tmpname);
+        }
+        return $mimeType ? $mimeType : 'application/octet-stream';
     }
 }
