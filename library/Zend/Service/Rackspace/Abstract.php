@@ -96,6 +96,12 @@ abstract class Zend_Service_Rackspace_Abstract
      */
     protected $managementUrl;
     /**
+     * Do we use ServiceNet?
+     * 
+     * @var boolean
+     */
+    protected $useServiceNet = false;
+    /**
      * Constructor
      *
      * You must pass the account and the Rackspace authentication key.
@@ -232,6 +238,18 @@ abstract class Zend_Service_Rackspace_Abstract
         }
     }
     /**
+     * Sets whether to use ServiceNet
+     * 
+     * ServiceNet is Rackspace's internal network. Bandwidth on ServiceNet is
+     * not charged.
+     * 
+     * @param boolean $useServiceNet
+     */
+    public function setServiceNet($useServiceNet = true)
+    {
+        $this->useServiceNet = $useServiceNet;
+    }
+    /**
      * Get the authentication token
      *
      * @return string
@@ -343,9 +361,13 @@ abstract class Zend_Service_Rackspace_Abstract
         $result = $this->httpCall($this->authUrl.'/'.self::VERSION,'GET', $headers);
         if ($result->getStatus()==204) {
             $this->token = $result->getHeader(self::AUTHTOKEN);
-            $this->storageUrl = $result->getHeader(self::STORAGE_URL);
             $this->cdnUrl = $result->getHeader(self::CDNM_URL);
             $this->managementUrl = $result->getHeader(self::MANAGEMENT_URL);
+            $storageUrl = $result->getHeader(self::STORAGE_URL);
+            if ($this->useServiceNet) {
+                $storageUrl = preg_replace('|(.*)://([^/]*)(.*)|', '$1://snet-$2$3', $storageUrl);
+            }
+            $this->storageUrl = $storageUrl;
             return true;
         }
         $this->errorMsg = $result->getBody();
