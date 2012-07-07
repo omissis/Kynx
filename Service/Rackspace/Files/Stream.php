@@ -1,41 +1,21 @@
 <?php
 /**
- * Zend Framework
- *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://framework.zend.com/license/new-bsd
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@zend.com so we can send you a copy immediately.
- *
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Rackspace
- * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @category   Kynx
+ * @package    Kynx_Service
+ * @subpackage Rackspace_Files
+ * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
+ * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
  */
-
 /**
- * Rackspace CloudFiles PHP stream wrapper
+ * Stream wrapper for Kynx_Service_Rackspace_Files
  * 
- * The methods stream_seek(), stream_tell() and stream_truncate() are not 
- * implemented. This means that you cannot do an fseek() or ftruncate() on this 
- * wrapper.
- * 
- * Cloudfiles use 'psuedo-directories'. Calling is_dir() on this wrapper will
- * return false unless a file ex
- *
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Rackspace
- * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @category   Kynx
+ * @package    Kynx_Service
+ * @subpackage Rackspace_Files
+ * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
+ * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
  */
-class Zend_Service_Rackspace_Files_Stream
+class Kynx_Service_Rackspace_Files_Stream
 {
     /**
      * @var boolean Write the buffer on stream_write()?
@@ -70,12 +50,11 @@ class Zend_Service_Rackspace_Files_Stream
     private $_objects = array();
 
     /**
-     * @var Zend_Service_Rackspace_Files
+     * @var Kynx_Service_Rackspace_Files
      */
     private $_rack = null;
     
     protected $_options = array(
-        'is_dir_true' => true,
         'range_size' => 81920
     );
     
@@ -412,11 +391,11 @@ class Zend_Service_Rackspace_Files_Stream
     
     /**
      * Performs stat operations
-     * @param Zend_Service_Rackspace_Files $rack
+     * @param Kynx_Service_Rackspace_Files $rack
      * @param array $parsed
      * @return mixed array|false
      */
-    protected static function stat(Zend_Service_Rackspace_Files $rack, $parsed, $options)
+    protected static function stat(Kynx_Service_Rackspace_Files $rack, $parsed, $options)
     {
         $stat = array();
         $stat['dev'] = 0;
@@ -481,7 +460,7 @@ class Zend_Service_Rackspace_Files_Stream
      * Retrieve client for this stream type
      *
      * @param  string $path
-     * @return Zend_Service_Rackspace_Files
+     * @return Kynx_Service_Rackspace_Files
      */
     protected function getRackClient($path)
     {
@@ -490,23 +469,23 @@ class Zend_Service_Rackspace_Files_Stream
 
             if (!$url) {
                 /**
-                 * @see Zend_Service_Rackspace_Exception
+                 * @see Kynx_Service_Rackspace_Files_Exception
                  */
-                require_once 'Zend/Service/Rackspace/Exception.php';
-                throw new Zend_Service_Rackspace_Exception("Unable to parse URL $path");
+                require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+                throw new Kynx_Service_Rackspace_Files_Exception("Unable to parse URL $path");
             }
 
             /**
-             * @see Zend_Service_Rackspace_Files
+             * @see Kynx_Service_Rackspace_Files
              */
-            require_once 'Zend/Service/Rackspace/Files.php';
-            $this->_rack = Zend_Service_Rackspace_Files::getWrapperClient($url[0]);
+            require_once 'Kynx/Service/Rackspace/Files.php';
+            $this->_rack = Kynx_Service_Rackspace_Files::getWrapperClient($url[0]);
             if (!$this->_rack) {
                 /**
-                 * @see Zend_Service_Rackspace_Exception
+                 * @see Kynx_Service_Rackspace_Files_Exception
                  */
-                require_once 'Zend/Service/Rackspace/Exception.php';
-                throw new Zend_Service_Rackspace_Exception("Unknown client for wrapper {$url[0]}");
+                require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+                throw new Kynx_Service_Rackspace_Files_Exception("Unknown client for wrapper '" . $url[0] . "'");
             }
             $this->_options = array_merge($this->_options, $this->_rack->getWrapperOptions());
         }
@@ -526,7 +505,13 @@ class Zend_Service_Rackspace_Files_Stream
         $url = parse_url($path);
         if ($url['host']) {
             $parsed['container'] = $url['host'];
-            $parsed['object'] = $url['path'];
+            $parsed['object'] = preg_replace('|^/|', '', $url['path']);
+            if (strlen(rawurlencode($parsed['object'])) > 1024) {
+                /**
+                 * @see Kynx_Service_Rackspace_Files_Exception
+                 */
+                throw new Kynx_Service_Rackspace_Files_Exception("Object name must not exceed 1024 characters");
+            }
         }
 
         return $parsed;

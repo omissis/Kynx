@@ -1,21 +1,22 @@
 <?php
 /**
  * @category   Kynx
- * @package    Kynx_Http
- * @subpackage Client_Adapter
+ * @package    Kynx_Service
+ * @subpackage Rackspace_Files
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
  * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
  */
 /**
- * @see Zend_Http_Client_Adapter_Exception
+ * @see Zend_Service_Rackspace_Files_Exception
  */
-require_once 'Zend/Http/Client/Adapter/Exception.php';
 /**
+ * Baby did a bad, bad thing
+ * 
  * @category   Kynx
- * @package    Kynx_Http
- * @subpackage Client_Adapter
+ * @package    Kynx_Service
+ * @subpackage Rackspace_Files
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
  * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
  */
-class Kynx_Http_Client_Adapter_Exception extends Zend_Http_Client_Adapter_Exception
+class Kynx_Service_Rackspace_Files_Exception extends Zend_Service_Rackspace_Files_Exception
 {}

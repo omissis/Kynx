@@ -1,39 +1,30 @@
 <?php
 /**
- * Zend Framework
- *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://framework.zend.com/license/new-bsd
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@zend.com so we can send you a copy immediately.
- *
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Rackspace
- * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @category   Kynx
+ * @package    Kynx_Service
+ * @subpackage Rackspace_Files_Checksum
+ * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
+ * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
  */
-
 /**
- * @see Zend_Service_Rackspace_Files_Checksum_Interface
+ * @see Kynx_Service_Rackspace_Files_Checksum_Interface
  */
-require_once 'Zend/Service/Rackspace/Files/Checksum/Interface.php';
-
+require_once 'Kynx/Service/Rackspace/Files/Checksum/Interface.php';
 /**
  * Performs on-the-fly checksumming by streaming data to system's md5 program
  *
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Rackspace
- * @copyright  Copyright (c) 2005-2012 Zend Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * Using this allows the checksum to be calculated without blocking the transfer.
+ * For large files there may also be considerable performance improvements to
+ * be got from using OpenSSL's MD5:
+ * @see http://www.php.net/manual/en/function.md5-file.php#81751
+ * 
+ * @category   Kynx
+ * @package    Kynx_Service
+ * @subpackage Rackspace_Files_Checksum
+ * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
+ * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
  */
-class Zend_Service_Rackspace_Files_Checksum_Proc implements Zend_Service_Rackspace_Files_Checksum_Interface
+class Kynx_Service_Rackspace_Files_Checksum_Proc implements Kynx_Service_Rackspace_Files_Checksum_Interface
 {
     /**
      * Handle to MD5 process
@@ -60,7 +51,7 @@ class Zend_Service_Rackspace_Files_Checksum_Proc implements Zend_Service_Rackspa
      * @var array
      */
     protected $options = array(
-        'exe' => 'md5sum', // md5 for FreeBSD/OSX, ??? Windows
+        'exe' => 'md5sum', // md5 for FreeBSD/OSX, ??? Windows, 'openssl md5' for openssl
     );
     
     /**
@@ -77,7 +68,15 @@ class Zend_Service_Rackspace_Files_Checksum_Proc implements Zend_Service_Rackspa
      */
     public $error = '';
     
-    
+    /**
+     * Constructor
+     * 
+     * If md5sum is not on your path, or you want to use an alternate MD5 summer,
+     * pass array('exe' => '/path/to/md5 --opt1 --opt1') as $options.
+     * 
+     * @param array $options
+     * @throws Kynx_Service_Rackspace_Files_Exception
+     */
     public function __construct($options = array()) {
         $this->options = array_merge($this->options, $options);
         
@@ -97,26 +96,26 @@ class Zend_Service_Rackspace_Files_Checksum_Proc implements Zend_Service_Rackspa
         
         if (!$this->cmd) {
             /**
-             * @see Zend_Service_Rackspace_Files_Exception
+             * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Zend/Service/Rackspace/Files/Exception.php';
-            throw new Zend_Service_Rackspace_Files_Exception("Cannot find md5 executable");
+            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+            throw new Kynx_Service_Rackspace_Files_Exception("Cannot find md5 executable");
         }
     }
     
     /**
      * Initializes checksum
      * 
-     * @throws Zend_Service_Rackspace_Files_Exception
+     * @throws Kynx_Service_Rackspace_Files_Exception
      */
     public function open()
     {
         if ($this->process) {
             /**
-             * @see Zend_Service_Rackspace_Files_Exception
+             * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Zend/Service/Rackspace/Files/Exception.php';
-            throw new Zend_Service_Rackspace_Files_Exception("Process is already open");            
+            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+            throw new Kynx_Service_Rackspace_Files_Exception("Process is already open");            
         }
         
         $descriptorspec = array(
@@ -128,10 +127,10 @@ class Zend_Service_Rackspace_Files_Checksum_Proc implements Zend_Service_Rackspa
         $this->process = proc_open($this->cmd, $descriptorspec, $this->pipes);
         if (!is_resource($this->process)) {
             /**
-             * @see Zend_Service_Rackspace_Files_Exception
+             * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Zend/Service/Rackspace/Files/Exception.php';
-            throw new Zend_Service_Rackspace_Files_Exception("Couldn't open temp file");
+            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+            throw new Kynx_Service_Rackspace_Files_Exception("Couldn't open temp file");
         }
         
         // don't block writes
@@ -150,10 +149,10 @@ class Zend_Service_Rackspace_Files_Checksum_Proc implements Zend_Service_Rackspa
         if (empty($status['running'])) {
             $this->close();
             /**
-             * @see Zend_Service_Rackspace_Files_Exception
+             * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Zend/Service/Rackspace/Files/Exception.php';
-            throw new Zend_Service_Rackspace_Files_Exception("Process not running");
+            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+            throw new Kynx_Service_Rackspace_Files_Exception("Process not running");
         }
         
         $written = 0;
