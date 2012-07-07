@@ -117,6 +117,7 @@ class Kynx_Service_Rackspace_Files_Checksum_Proc implements Kynx_Service_Rackspa
             require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception("Process is already open");            
         }
+        $this->sum = '';
         
         $descriptorspec = array(
            0 => array("pipe", "r"),
@@ -133,8 +134,10 @@ class Kynx_Service_Rackspace_Files_Checksum_Proc implements Kynx_Service_Rackspa
             throw new Kynx_Service_Rackspace_Files_Exception("Couldn't open temp file");
         }
         
-        // don't block writes
-        stream_set_blocking($this->pipes[0], 0);
+        // don't block writes or reads
+        foreach (array_keys($this->pipes) as $p) {
+            stream_set_blocking($this->pipes[$p], 0);
+        }
     }
     
     /**
@@ -196,15 +199,36 @@ class Kynx_Service_Rackspace_Files_Checksum_Proc implements Kynx_Service_Rackspa
      */
     public function calculate() 
     {
-        $sum = false;
+        $sum = $err = false;
         if ($this->process) {
             fclose($this->pipes[0]);
             unset($this->pipes[0]);
             
-            while (!feof($this->pipes[2])) {
-                $this->error .= fread($this->pipes[2], 1024);
+            // wait for first pipe with input to read
+            $read = array($this->pipes[1], $this->pipes[2]);
+            $write = $except = null;
+            $str = '';
+            while (!$str) {
+                if ($num = stream_select($read, $write, $except, 2)) {
+                    while ($s = fread($read[0], 1024)) {
+                        $str .= $s;
+                    }
+                    if ($read[0] == $this->pipes[1]) {
+                        $sum .= substr($str, 0, 32);
+                    }
+                    else {
+                        $err .= $str;
+                    }
+                }
+                if ($num === false) {
+                    /**
+                     * @see Kynx_Service_Rackspace_Files_Exception
+                     */
+                    require_once 'Kynx/Service/Rackspace/Files/Exception.php';
+                    throw new Kynx_Service_Rackspace_Files_Exception("Couldn't read from checksum process");
+                }
             }
-            $sum = fread($this->pipes[1], 32);
+            
             if (!$err && $sum) {
                 $this->sum .= $sum;
             }

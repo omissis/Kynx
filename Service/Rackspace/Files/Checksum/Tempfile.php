@@ -31,6 +31,7 @@ class Kynx_Service_Rackspace_Files_Checksum_Tempfile implements Kynx_Service_Rac
      */
     public function open()
     {
+        $this->sum = '';
         $this->tempFile = tmpfile();
         if (!is_resource($this->tempFile)) {
             /**
