@@ -22,7 +22,7 @@ require_once 'Zend/Service/Rackspace/Files.php';
 class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
 {
     const HEADER_RANGE                         = 'Range';
-    const HEADER_TRANSER_ENCODING              = 'Transfer-Encoding';
+    const HEADER_TRANSFER_ENCODING             = 'Transfer-Encoding';
     const WRAPPER_NAME                         = 'rscf';
     
     /**
@@ -131,7 +131,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         
         $headers = array(
             self::HEADER_CONTENT_TYPE => $this->getMimeTypeFromString($content),
-            self::HEADER_TRANSER_ENCODING => 'chunked');
+            self::HEADER_TRANSFER_ENCODING => 'chunked');
         
         if (!empty($metadata) && is_array($metadata)) {
             foreach ($metadata as $key => $value) {
@@ -411,8 +411,8 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         $this->errorMsg='';
         $this->errorCode='';
         
-        if (!empty($headers[self::HEADER_TRANSER_ENCODING]) 
-                && $headers[self::HEADER_TRANSER_ENCODING] == 'chunked') {
+        if (!empty($headers[self::HEADER_TRANSFER_ENCODING]) 
+                && $headers[self::HEADER_TRANSFER_ENCODING] == 'chunked') {
             return $client->startChunkedSend();
         }
         return $client->request();
