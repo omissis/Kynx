@@ -418,17 +418,6 @@ class Kynx_Service_Rackspace_Files_Stream
         if (empty($parsed['object'])) {
             $isDir = $rack->getMetadataContainer($parsed['container']);
         }
-        // just check container if we've been called from is_dir() and have been
-        // asked to override normal checks
-        elseif ($options['is_dir_true']) {
-            $backtrace = debug_backtrace();
-            if ($backtrace[2]['function'] == 'is_dir') {
-                $isDir = $rack->getMetadataContainer($parsed['container']);
-                if (!$isDir) {
-                    $stat = false;
-                }
-            }
-        }
         if ($stat && !$isDir) {
             // try and get object itself
             $info = $rack->getMetadataObject($parsed['container'], $parsed['object']);
