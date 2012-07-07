@@ -4,7 +4,7 @@
  * @package    Kynx_Service
  * @subpackage Rackspace
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 /**
  * @see Zend_Service_Rackspace_Files
@@ -17,7 +17,7 @@ require_once 'Zend/Service/Rackspace/Files.php';
  * @package    Kynx_Service
  * @subpackage Rackspace
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
 {

@@ -4,7 +4,7 @@
  * @package    Kynx_Service
  * @subpackage Rackspace_Files_Checksum
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 /**
  * The interface for Zend_Service_Rackspace_Files_Checksum classes
@@ -19,7 +19,7 @@
  * @package    Kynx_Service
  * @subpackage Rackspace_Files_Checksum
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 interface Kynx_Service_Rackspace_Files_Checksum_Interface
 {

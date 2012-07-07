@@ -4,7 +4,7 @@
  * @package    Kynx_Service
  * @subpackage Rackspace_Files_Checksum
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 /**
  * @see Kynx_Service_Rackspace_Files_Checksum_Interface
@@ -22,7 +22,7 @@ require_once 'Kynx/Service/Rackspace/Files/Checksum/Interface.php';
  * @package    Kynx_Service
  * @subpackage Rackspace_Files_Checksum
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 class Kynx_Service_Rackspace_Files_Checksum_Proc implements Kynx_Service_Rackspace_Files_Checksum_Interface
 {

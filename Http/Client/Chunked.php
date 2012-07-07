@@ -4,7 +4,7 @@
  * @package    Kynx_Http
  * @subpackage Client
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 /**
  * @see Zend_Http_Client
@@ -23,7 +23,7 @@ require_once 'Zend/Http/Client.php';
  * @package    Kynx_Http
  * @subpackage Client
  * @copyright  Copyright (c) 2012 Matt Kynaston (http://www.kynx.org)
- * @license    https://github.com/kynx/Kynx/tree/master/LICENSE New BSD
+ * @license    https://github.com/kynx/Kynx/blob/master/LICENSE New BSD
  */
 class Kynx_Http_Client_Chunked extends Zend_Http_Client
 {
