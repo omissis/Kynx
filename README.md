@@ -1,8 +1,7 @@
-Zend Framework Rackspace Extensions
-===================================
+Zend Framework Extensions
+=========================
 
-This library provides extensions to [ZF1][]'s Rackspace
-classes.
+This library provides extensions to [ZF1][]'s Rackspace classes.
 
 [ZF1]: http://framework.zend.com
 
@@ -41,6 +40,16 @@ It also makes copying files between Rackspace accounts trivial:
     copy('cf1://container/backup.tgz', 'cf2://container/backup.tgz');
 
 
+From the Command Line
+---------------------
+
+If you need to move files to and from cloud files from the command line - say
+in a nightly backup - check out [cfpipe][]. It's a simple utility that uses the
+stream wrapper to copy from the STDIN and to the STDOUT.
+
+[cfpipe]: https://gist.github.com/3068629
+
+
 Caveats
 -------
 
@@ -56,7 +65,7 @@ to get up and running, then do some profiling to find out where Cloud Files is
 bogging you down.
 
 * **Not every file system function will work**. You can't open a Cloud File in 
-read/write or append mode: `fopen('rscf://...', 'a+')` will fail). You can't do 
+read/write or append mode: `fopen('rscf://...', 'a+')` will fail. You can't do 
 an `fseek()` or an `ftruncate()` on a Cloud File. And some PHP functions like 
 `zip_open()` just don't support streams.
 
@@ -98,6 +107,7 @@ Rackspace also exposes a [TempURL][] call that could accomplish much the same
 thing. Another one for the todo list ;)
 
 [TempURL]: http://docs.rackspace.com/files/api/v1/cf-devguide/content/TempURL-d1a4450.html
+
 
 Alternate Checksum Methods
 --------------------------
