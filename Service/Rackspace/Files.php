@@ -332,7 +332,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
      * @throws Kynx_Service_Rackspace_Files_Exception
      */
      protected function getObjectUrl($container, $object) {
-        if (strlen($container) > 256 || strstr($container, '/')) {
+        if (strlen(rawurlencode($container)) > 256 || strstr($container, '/')) {
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
@@ -342,7 +342,8 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         $path = explode('/', $object);
         if (count($path) && empty($path[0])) unset($path[0]);
 
-        $object = join('/', $path);
+        $container = rawurlencode($container);
+        $object = rawurlencode(join('/', $path));
         if (strlen($object) > 1024) {
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
@@ -350,7 +351,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
             require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception("Object name must not excede 1024 characters");
         }
-        return $this->getStorageUrl() . '/' . rawurlencode($container) . '/' . rawurlencode($object);
+        return $this->getStorageUrl() . '/' . $container . '/' . $object;
     }
     
     /**
