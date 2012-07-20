@@ -27,6 +27,8 @@ require_once 'Zend/Http/Client.php';
  */
 class Kynx_Http_Client_Chunked extends Zend_Http_Client
 {
+    protected $chunkedAdapter;
+    
     /**
      * Constructor
      * 
@@ -66,10 +68,10 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
         }
 
         // Make sure the adapter is loaded
-        if (!$this->adapter) {
-            $this->setAdapter($this->config['adapter']);
+        if (!$this->chunkedAdapter) {
+            $this->setChunkedAdapter($this->config['adapter']);
         }
-        if (!($this->adapter instanceof Kynx_Http_Client_Adapter_SocketChunked)) {
+        if (!($this->chunkedAdapter instanceof Kynx_Http_Client_Adapter_SocketChunked)) {
             /**
              * @see Kynx_Http_Client_Exception 
              */
@@ -81,11 +83,11 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
         $body = $this->_prepareBody();
         $headers = $this->_prepareHeaders();
 
-        $this->adapter->connect($uri->getHost(), $uri->getPort(),
+        $this->chunkedAdapter->connect($uri->getHost(), $uri->getPort(),
             ($uri->getScheme() == 'https' ? true : false));
-        $this->last_request = $this->adapter->startChunkedSend($this->method,
+        $this->last_request = $this->chunkedAdapter->startChunkedSend($this->method,
             $uri, $this->config['httpversion'], $headers);
-        $this->adapter->appendChunk($body);
+        $this->chunkedAdapter->appendChunk($body);
     }
     
     /**
@@ -95,7 +97,7 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
      */
     public function appendChunk($data)
     {
-        return $this->adapter->appendChunk($data);
+        return $this->chunkedAdapter->appendChunk($data);
     }
     
     /**
@@ -106,8 +108,8 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
      */
     public function endChunkedSend()
     {
-        $this->adapter->endChunkedSend();
-        $response = $this->adapter->read();
+        $this->chunkedAdapter->endChunkedSend();
+        $response = $this->chunkedAdapter->read();
         if (!$response) {
             /**
              * @see Kynx_Http_Client_Exception 
@@ -136,14 +138,14 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
      */
     public function isSendingChunked() 
     {
-        if (!($this->getAdapter() instanceof Kynx_Http_Client_Adapter_SocketChunked)) {
+        if (!($this->getChunkedAdapter() instanceof Kynx_Http_Client_Adapter_SocketChunked)) {
             /**
              * @see Kynx_Http_Client_Exception 
              */
             require_once 'Kynx/Http/Client/Exception.php';
             throw new Kynx_Http_Client_Exception('Adapter does not support sending chunked');
         }
-        return $this->adapter->isSendingChunked();
+        return $this->chunkedAdapter->isSendingChunked();
     }
 
     
@@ -177,5 +179,55 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
             $uri->setQuery($query);
         }
         return $uri;
+    }
+
+    /**
+     * Load the connection adapter
+     *
+     * @return Zend_Http_Client_Adapter_Interface $adapter
+     */
+    public function getChunkedAdapter()
+    {
+        if (null === $this->chunkedAdapter) {
+            $this->setChunkedAdapter($this->config['adapter']);
+        }
+
+        return $this->chunkedAdapter;
+    }
+
+    /**
+     * Load the connection adapter
+     *
+     * While this method is not called more than one for a client, it is
+     * seperated from ->request() to preserve logic and readability
+     *
+     * @param Zend_Http_Client_Adapter_Interface|string $adapter
+     * @return null
+     * @throws Zend_Http_Client_Exception
+     */
+    public function setChunkedAdapter($adapter)
+    {
+        if (is_string($adapter)) {
+            try {
+                Zend_Loader::loadClass($adapter);
+            } catch (Zend_Exception $e) {
+                /** @see Zend_Http_Client_Exception */
+                require_once 'Zend/Http/Client/Exception.php';
+                throw new Zend_Http_Client_Exception("Unable to load adapter '$adapter': {$e->getMessage()}", 0, $e);
+            }
+
+            $adapter = new $adapter;
+        }
+
+        if (! $adapter instanceof Zend_Http_Client_Adapter_Interface) {
+            /** @see Zend_Http_Client_Exception */
+            require_once 'Zend/Http/Client/Exception.php';
+            throw new Zend_Http_Client_Exception('Passed adapter is not a HTTP connection adapter');
+        }
+
+        $this->chunkedAdapter = $adapter;
+        $config = $this->config;
+        unset($config['adapter']);
+        $this->chunkedAdapter->setConfig($config);
     }
 }
