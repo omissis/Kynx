@@ -84,6 +84,8 @@ class Kynx_Service_Rackspace_Files_Stream
             return false;
         }
 
+        $this->getRackClient($path);
+
         if (strstr($mode, 'x') && $this->_rack->getMetadataObject($parsed['container'], $parsed['object'])) {
             if ($options & STREAM_REPORT_ERRORS) {
                 // fopen() issues warning, so that's what we do
@@ -99,11 +101,10 @@ class Kynx_Service_Rackspace_Files_Stream
             $this->_objectSize = 0;
             $this->_position = 0;
             $this->_writeBuffer = true;
-            $this->getRackClient($path);
             return true;
         } else {
             // Otherwise, just see if the file exists or not
-            $info = $this->getRackClient($path)->getMetadataObject($parsed['container'], $parsed['object']);
+            $info = $this->_rack->getMetadataObject($parsed['container'], $parsed['object']);
             if ($info) {
                 $this->_container = $parsed['container'];
                 $this->_objectName = $parsed['object'];
@@ -130,7 +131,6 @@ class Kynx_Service_Rackspace_Files_Stream
         $this->_objectSize = 0;
         $this->_position = 0;
         $this->_writeBuffer = false;
-        unset($this->_rack);
     }
 
     /**
