@@ -12,7 +12,7 @@
 require_once 'Zend/Service/Rackspace/Files.php';
 /**
  * Extends Zend_Service_Rackspace_Files to provide streaming capabilities
- * 
+ *
  * @category   Kynx
  * @package    Kynx_Service
  * @subpackage Rackspace
@@ -24,39 +24,39 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
     const HEADER_RANGE                         = 'Range';
     const HEADER_TRANSFER_ENCODING             = 'Transfer-Encoding';
     const WRAPPER_NAME                         = 'rscf';
-    
+
     /**
      * Array of wrapper clients
-     * 
+     *
      * @var Kynx_Service_Rackspace_Files_Stream[]
      */
     protected static $wrapperClients = array();
-    
+
     /**
      * Options for wrapper clients
      * @var array
      */
     protected $wrapperOptions = array();
-    
+
     /**
      * Object being sent using chunked encoding
-     * 
+     *
      * @var array
      */
     protected $chunkedObject;
-    
+
     /**
      * Class to perform checksums
-     * 
+     *
      * @var Kynx_Service_Rackspace_Files_Checksum_Interface
      */
     protected $checkSummer;
-    
+
     /**
      * Get an object using streaming
      *
      * Can use either provided filename for storage or create a temp file if none provided.
-     * 
+     *
      * @param string $container
      * @param string $object
      * @param mixed $streamfile  resource|string
@@ -87,14 +87,12 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception(self::ERROR_PARAM_NO_NAME_CONTAINER);
         }
         if (empty($object)) {
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
         }
         if ($start || $end) {
@@ -102,7 +100,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         }
         return $this->httpCall($this->getObjectUrl($container, $object),'GET',$headers);
     }
-    
+
     /**
      * Store a file in a container using chunked transfer encoding
      *
@@ -118,21 +116,19 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception(self::ERROR_PARAM_NO_NAME_CONTAINER);
         }
         if (empty($object)) {
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception(self::ERROR_PARAM_NO_NAME_OBJECT);
         }
-        
+
         $headers = array(
             self::HEADER_CONTENT_TYPE => $this->getMimeTypeFromString($content),
             self::HEADER_TRANSFER_ENCODING => 'chunked');
-        
+
         if (!empty($metadata) && is_array($metadata)) {
             foreach ($metadata as $key => $value) {
                 $headers[self::METADATA_OBJECT_HEADER.$key]= $value;
@@ -141,15 +137,15 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         $this->chunkedObject = array('container' => $container, 'object' => $object);
         $this->getChecksummer()->open();
         $this->httpCall($this->getObjectUrl($container, $object), 'PUT', $headers, null, $content);
-  
+
         return $this->getChecksummer()->append($content);
     }
-    
+
     /**
      * Appends chunk to transfer
-     * 
+     *
      * @todo Handle splitting files > 5G
-     * 
+     *
      * @param string $data
      * @return integer     lenght appended, false on failu
      */
@@ -161,18 +157,18 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         }
         return $len;
     }
-    
+
     /**
      * Signal that chunked transfer is ended
      * @return boolean
      */
-    public function endStoreChunks() 
+    public function endStoreChunks()
     {
         $result = $this->httpClient->endChunkedSend();
         $status = $result->getStatus();
         $rv = false;
         switch ($status) {
-            case '201': 
+            case '201':
                 // only successful if MD5s match
                 $rv = $result->getHeader(self::HEADER_HASH) == $this->getChecksummer()->getSum();
                 if (!$rv) {
@@ -197,16 +193,16 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         $this->chunkedObject = false;
         return $rv;
     }
-    
+
     /**
      * Returns true if transfer in progress
      * @return boolean
      */
-    public function isTransfering() 
+    public function isTransfering()
     {
         return $this->getHttpClient()->isSendingChunked();
     }
-    
+
     /**
      * Override base class to add keepalive option
      * @return Kynx_Http_Client_Chunked
@@ -215,14 +211,13 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
     {
         if (empty($this->httpClient)) {
             /**
-             * @see Kynx_Http_Client_Chunked 
+             * @see Kynx_Http_Client_Chunked
              */
-            require_once 'Kynx/Http/Client/Chunked.php';
             $this->httpClient = new Kynx_Http_Client_Chunked(null, array(/*'keepalive' => true*/));
         }
         return $this->httpClient;
     }
-    
+
     /**
      * Register this object as stream wrapper client
      *
@@ -246,7 +241,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         unset(self::$wrapperClients[$name]);
         return $this;
     }
- 
+
     /**
      * Get wrapper client for stream type
      *
@@ -257,10 +252,10 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
     {
         return self::$wrapperClients[$name];
     }
-    
+
     /**
      * Returns options for stream wrapper
-     * 
+     *
      * @return array
      */
     public function getWrapperOptions()
@@ -279,7 +274,6 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         /**
          * @see Kynx_Service_Rackspace_Files_Stream
          */
-        require_once 'Kynx/Service/Rackspace/Files/Stream.php';
         stream_register_wrapper($name, 'Kynx_Service_Rackspace_Files_Stream');
         $this->registerAsClient($name);
         $this->wrapperOptions = $options;
@@ -295,7 +289,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         stream_wrapper_unregister($name);
         $this->unregisterAsClient($name);
     }
-    
+
     /**
      * Gets checksumming class
      *
@@ -307,25 +301,24 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
             /**
              * @see Kynx_Service_Rackspace_Files_Checksum_Tempfile
              */
-            require_once 'Kynx/Service/Rackspace/Files/Checksum/Tempfile.php';
             $this->checkSummer = new Kynx_Service_Rackspace_Files_Checksum_Tempfile();
         }
         return $this->checkSummer;
     }
-    
+
     /**
      * Sets checksumming class
-     * 
+     *
      * $param Kynx_Service_Rackspace_Files_Checkum $checksummer
      */
     public function setChecksummer(Kynx_Service_Rackspace_Files_Checksum_Interface $checksummer)
     {
         $this->checkSummer = $checksummer;
     }
- 
+
     /**
      * Returns URL for object in given container
-     * 
+     *
      * @param type $container
      * @param type $object
      * @return type
@@ -336,7 +329,6 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception("Invalid container name");
         }
         $path = explode('/', $object);
@@ -348,12 +340,11 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
             /**
              * @see Kynx_Service_Rackspace_Files_Exception
              */
-            require_once 'Kynx/Service/Rackspace/Files/Exception.php';
             throw new Kynx_Service_Rackspace_Files_Exception("Object name must not excede 1024 characters");
         }
         return $this->getStorageUrl() . '/' . $container . '/' . $object;
     }
-    
+
     /**
      * Attempts to determine mime type of given content
      * @param string $content
@@ -378,7 +369,7 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         }
         return $mimeType ? $mimeType : 'application/octet-stream';
      }
-     
+
     /**
      * Overrides Zend_Service_Rackpsace_Abstract::httpCall() to send Transfer-Encoding: chunked
      *
@@ -395,12 +386,12 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         $client->resetParameters(true);
         if (empty($headers[self::AUTHUSER_HEADER])) {
             $headers[self::AUTHTOKEN]= $this->getToken();
-        } 
+        }
         $client->setMethod($method);
         if (empty($data['format'])) {
             $data['format']= self::API_FORMAT;
         }
-        $client->setParameterGet($data);    
+        $client->setParameterGet($data);
         if (!empty($body)) {
             $client->setRawData($body);
             if (!isset($headers['Content-Type'])) {
@@ -411,8 +402,8 @@ class Kynx_Service_Rackspace_Files extends Zend_Service_Rackspace_Files
         $client->setUri($url);
         $this->errorMsg='';
         $this->errorCode='';
-        
-        if (!empty($headers[self::HEADER_TRANSFER_ENCODING]) 
+
+        if (!empty($headers[self::HEADER_TRANSFER_ENCODING])
                 && $headers[self::HEADER_TRANSFER_ENCODING] == 'chunked') {
             return $client->startChunkedSend();
         }

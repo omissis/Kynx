@@ -25,7 +25,7 @@ class Kynx_Http_Client_Adapter_SocketChunked extends Zend_Http_Client_Adapter_So
 {
     /**
      * Are we sending chunked request?
-     * 
+     *
      * @var boolean
      */
     protected $sendingChunked = false;
@@ -39,7 +39,7 @@ class Kynx_Http_Client_Adapter_SocketChunked extends Zend_Http_Client_Adapter_So
      * @param array         $headers
      * @return string Request as text
      */
-    public function startChunkedSend($method, $uri, $http_ver = '1.1', $headers = array()) 
+    public function startChunkedSend($method, $uri, $http_ver = '1.1', $headers = array())
     {
         $hasTransferEncoding = false;
         foreach ($headers as $i => $header) {
@@ -47,36 +47,34 @@ class Kynx_Http_Client_Adapter_SocketChunked extends Zend_Http_Client_Adapter_So
             if (strstr($header, 'Transfer-Encoding: chunked')) $hasTransferEncoding = true;
         }
         if (!$hasTransferEncoding) $headers[] = 'Transfer-Encoding: chunked';
-        
+
         $this->sendingChunked = true;
         return $this->write($method, $uri, $http_ver, $headers);
     }
-     
+
     /**
      * Appends a chunk to the request
-     * 
+     *
      * @param string $data
      * @param boolean $last  This is last chunk to send
      * @return boolean       False if no data written
-     */   
-    public function appendChunk($data, $last = false) 
+     */
+    public function appendChunk($data, $last = false)
     {
         if (!is_resource($this->socket)) {
             /**
              * @see Kynx_Http_Client_Adapter_Exception
              */
-            require_once 'Kynx/Http/Client/Adapter/Exception.php';
             throw new Kynx_Http_Client_Adapter_Exception("Trying to write but we're not connected");
         }
         if (!$this->sendingChunked) {
             /**
              * @see Kynx_Http_Client_Adapter_Exception
              */
-            require_once 'Kynx/Http/Client/Adapter/Exception.php';
             throw new Kynx_Http_Client_Adapter_Exception("Chunked send has not been started");
         }
         if ($data) {
-            $data = dechex(strlen($data)) . "\r\n" 
+            $data = dechex(strlen($data)) . "\r\n"
                 . $data . "\r\n";
         }
         if ($last) {
@@ -87,26 +85,25 @@ class Kynx_Http_Client_Adapter_SocketChunked extends Zend_Http_Client_Adapter_So
                 /**
                 * @see Kynx_Http_Client_Adapter_Exception
                 */
-                require_once 'Kynx/Http/Client/Adapter/Exception.php';
                 throw new Kynx_Http_Client_Adapter_Exception('Error writing chunk to server');
             }
             return true;
         }
         return false;
     }
-    
+
     /**
      * Ends chunked transfer request
      */
-    public function endChunkedSend() 
+    public function endChunkedSend()
     {
         $this->appendChunk('', true);
         $this->sendingChunked = false;
     }
-    
+
     /**
      * Returns true if chunked request is in progress
-     * 
+     *
      * @return boolean
      */
     public function isSendingChunked()

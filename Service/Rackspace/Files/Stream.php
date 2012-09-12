@@ -8,7 +8,7 @@
  */
 /**
  * Stream wrapper for Kynx_Service_Rackspace_Files
- * 
+ *
  * @category   Kynx
  * @package    Kynx_Service
  * @subpackage Rackspace_Files
@@ -26,14 +26,14 @@ class Kynx_Service_Rackspace_Files_Stream
      * @var integer Current read/write position
      */
     private $_position = 0;
-    
+
     /**
      * @var integer Total size of the object as returned by S3 (Content-length)
      */
     private $_objectSize = 0;
 
     private $_container;
-    
+
     /**
      * @var string File name to interact with
      */
@@ -43,7 +43,7 @@ class Kynx_Service_Rackspace_Files_Stream
      * @var string Current read/write buffer
      */
     private $_objectBuffer = null;
-    
+
     /**
      * @var array Available containers/objects
      */
@@ -53,11 +53,11 @@ class Kynx_Service_Rackspace_Files_Stream
      * @var Kynx_Service_Rackspace_Files
      */
     private $_rack = null;
-    
+
     protected $_options = array(
         'range_size' => 81920
     );
-    
+
     /**
      * Open the stream
      *
@@ -75,7 +75,7 @@ class Kynx_Service_Rackspace_Files_Stream
             }
             return false;
         }
-        
+
         $parsed = $this->parsePath($path);
         if (empty($parsed['object'])) {
             if ($options & STREAM_REPORT_ERRORS) {
@@ -93,7 +93,7 @@ class Kynx_Service_Rackspace_Files_Stream
             }
             return false;
         }
-        
+
         if (strpbrk($mode, 'wx')) {
             $this->_container = $parsed['container'];
             $this->_objectName = $parsed['object'];
@@ -186,7 +186,7 @@ class Kynx_Service_Rackspace_Files_Stream
         if (!$this->_objectName) {
             return 0;
         }
-        
+
         if (!$this->_rack->isTransfering()) {
             $len = $this->_rack->beginStoreChunks($this->_container, $this->_objectName, $data);
         }
@@ -222,7 +222,7 @@ class Kynx_Service_Rackspace_Files_Stream
         if (!$this->_writeBuffer) {
             return false;
         }
-        
+
         $this->_objectBuffer = null;
         return $this->_rack->endStoreChunks();
     }
@@ -238,8 +238,8 @@ class Kynx_Service_Rackspace_Files_Stream
             return false;
         }
 
-        return self::stat($this->_rack, 
-                array('container' => $this->_container, 'object' => $this->_objectName), 
+        return self::stat($this->_rack,
+                array('container' => $this->_container, 'object' => $this->_objectName),
                 $this->_options);
     }
 
@@ -267,7 +267,7 @@ class Kynx_Service_Rackspace_Files_Stream
         $from = $this->parsePath($path_from);
         $to = $this->parsePath($path_to);
         $rack = $this->getRackClient($path_from);
-        
+
         $fromInfo = $rack->getMetadataObject($from['container'], $from['object']);
         if ($rack->copyObject($from['container'], $from['object'], $to['container'], $to['object'])) {
             $toInfo = $rack->getMetadataObject($to['container'], $to['object']);
@@ -388,7 +388,7 @@ class Kynx_Service_Rackspace_Files_Stream
         $this->_objects = array();
         return true;
     }
-    
+
     /**
      * Performs stat operations
      * @param Kynx_Service_Rackspace_Files $rack
@@ -413,7 +413,7 @@ class Kynx_Service_Rackspace_Files_Stream
         $stat['blocks'] = 0;
 
         $isDir = $info = false;
-        
+
         // check if we're a container
         if (empty($parsed['object'])) {
             $isDir = $rack->getMetadataContainer($parsed['container']);
@@ -441,10 +441,10 @@ class Kynx_Service_Rackspace_Files_Stream
         }
         if ($isDir && $stat) {
             $stat['mode'] |= 040000;
-        }        
+        }
         return $stat;
     }
-    
+
     /**
      * Retrieve client for this stream type
      *
@@ -460,20 +460,17 @@ class Kynx_Service_Rackspace_Files_Stream
                 /**
                  * @see Kynx_Service_Rackspace_Files_Exception
                  */
-                require_once 'Kynx/Service/Rackspace/Files/Exception.php';
                 throw new Kynx_Service_Rackspace_Files_Exception("Unable to parse URL $path");
             }
 
             /**
              * @see Kynx_Service_Rackspace_Files
              */
-            require_once 'Kynx/Service/Rackspace/Files.php';
             $this->_rack = Kynx_Service_Rackspace_Files::getWrapperClient($url[0]);
             if (!$this->_rack) {
                 /**
                  * @see Kynx_Service_Rackspace_Files_Exception
                  */
-                require_once 'Kynx/Service/Rackspace/Files/Exception.php';
                 throw new Kynx_Service_Rackspace_Files_Exception("Unknown client for wrapper '" . $url[0] . "'");
             }
             $this->_options = array_merge($this->_options, $this->_rack->getWrapperOptions());

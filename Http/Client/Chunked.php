@@ -13,12 +13,12 @@ require_once 'Zend/Http/Client.php';
 
 /**
  * Extends Zend_Http_Client to allow for sending requests with Transfer-Encoding: chunked
- * 
+ *
  * Chunked requests enable you to send data when the Content-Length is not known.
  * This is useful when sending data from a stream.
  *
  * @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html
- * 
+ *
  * @category   Kynx
  * @package    Kynx_Http
  * @subpackage Client
@@ -28,10 +28,10 @@ require_once 'Zend/Http/Client.php';
 class Kynx_Http_Client_Chunked extends Zend_Http_Client
 {
     protected $chunkedAdapter;
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param Zend_Uri_Http|string $uri
      * @param array $config Configuration key-value pairs.
      */
@@ -39,20 +39,19 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
         $this->config['adapter'] = 'Kynx_Http_Client_Adapter_SocketChunked';
         parent::__construct($uri, $config);
     }
-    
+
     /**
      * Starts sending a request with Transfer-Encoding: chunked
-     * 
+     *
      * @param type $method
-     * @throws Kynx_Http_Client_Exception 
+     * @throws Kynx_Http_Client_Exception
      */
     public function startChunkedSend($method = null)
     {
         if (!$this->uri instanceof Zend_Uri_Http) {
             /**
-             * @see Kynx_Http_Client_Exception 
+             * @see Kynx_Http_Client_Exception
              */
-            require_once 'Kynx/Http/Client/Exception.php';
             throw new Kynx_Http_Client_Exception('No valid URI has been passed to the client');
         }
 
@@ -63,7 +62,6 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
             /**
              * @see Zend_Http_Client_Adapter_Exception
              */
-            require_once 'Kynx/Http/Client/Exception.php';
             throw new Kynx_Http_Client_Exception("Chunked requests only work with PUT or POST methods");
         }
 
@@ -73,12 +71,11 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
         }
         if (!($this->chunkedAdapter instanceof Kynx_Http_Client_Adapter_SocketChunked)) {
             /**
-             * @see Kynx_Http_Client_Exception 
+             * @see Kynx_Http_Client_Exception
              */
-            require_once 'Kynx/Http/Client/Exception.php';
             throw new Kynx_Http_Client_Exception('Adapter does not support chunked request');
         }
-        
+
         $uri = $this->_prepareUri();
         $body = $this->_prepareBody();
         $headers = $this->_prepareHeaders();
@@ -89,22 +86,22 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
             $uri, $this->config['httpversion'], $headers);
         $this->chunkedAdapter->appendChunk($body);
     }
-    
+
     /**
      * Appends chunk of data to request
-     * 
-     * @param string $data 
+     *
+     * @param string $data
      */
     public function appendChunk($data)
     {
         return $this->chunkedAdapter->appendChunk($data);
     }
-    
+
     /**
      * Ends chunked request
-     * 
+     *
      * @return Zend_Http_Response
-     * @throws Kynx_Http_Client_Exception 
+     * @throws Kynx_Http_Client_Exception
      */
     public function endChunkedSend()
     {
@@ -112,12 +109,11 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
         $response = $this->chunkedAdapter->read();
         if (!$response) {
             /**
-             * @see Kynx_Http_Client_Exception 
+             * @see Kynx_Http_Client_Exception
              */
-            require_once 'Kynx/Http/Client/Exception.php';
             throw new Kynx_Http_Client_Exception('Unable to read response, or response is empty');
         }
-        
+
         /**
          * @see Zend_Http_Response
          */
@@ -126,32 +122,31 @@ class Kynx_Http_Client_Chunked extends Zend_Http_Client
         if ($this->config['storeresponse']) {
             $this->last_response = $response;
         }
-        
+
         return $response;
     }
-    
+
     /**
      * Returns true if chunked request in progress
-     * 
+     *
      * @return boolean
-     * @throws Kynx_Http_Client_Exception 
+     * @throws Kynx_Http_Client_Exception
      */
-    public function isSendingChunked() 
+    public function isSendingChunked()
     {
         if (!($this->getChunkedAdapter() instanceof Kynx_Http_Client_Adapter_SocketChunked)) {
             /**
-             * @see Kynx_Http_Client_Exception 
+             * @see Kynx_Http_Client_Exception
              */
-            require_once 'Kynx/Http/Client/Exception.php';
             throw new Kynx_Http_Client_Exception('Adapter does not support sending chunked');
         }
         return $this->chunkedAdapter->isSendingChunked();
     }
 
-    
+
     /**
      * Clone the URI and add the additional GET parameters to it
-     * 
+     *
      * @return Zend_Uri_Http
      */
     protected function _prepareUri()
